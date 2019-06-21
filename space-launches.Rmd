@@ -1,0 +1,91 @@
+---
+title: "Space Launches"
+author: "Dean Marchiori"
+date: "6/21/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+```{r}
+library(tidyverse)
+library(skimr)
+
+launches <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-01-15/launches.csv')
+
+```
+
+```{r}
+vehicles <- launches %>% 
+  mutate(state_code = fct_recode(state_code, 
+                                 `Soviet Union / Russia`  = "SU",
+                                 `Soviet Union / Russia`  = "RU"),
+         state_code = fct_lump(state_code, 2),
+         category = fct_recode(category,success = "O",
+                               failure = "F")) %>% 
+  filter(agency_type == "state",
+         state_code != "Other") %>% 
+  group_by(type) %>% 
+  filter(!is.na(launch_date)) %>% 
+  mutate(min_date = min(launch_date, na.rm = TRUE),
+         max_date = max(launch_date, na.rm = TRUE)) %>% 
+  group_by(type, state_code, category, min_date, max_date) %>% 
+  count() %>% 
+  spread(category, n, fill = 0) %>% 
+  ungroup() %>% 
+  mutate(type = fct_reorder(type, min_date, .desc = TRUE),
+         total_launches = failure + success,
+         success_pct = success / total_launches) %>% 
+  filter(max_date < as.Date('2020-01-01')) %>% 
+  filter(total_launches > 0) %>% 
+  mutate(label = ifelse(total_launches > 134, glue::glue("{as.character(type)}: {total_launches} launches"), NA))
+
+
+ggplot(vehicles) +
+  geom_segment(aes(x = min_date, 
+                   xend = max_date, 
+                   y = type, 
+                   yend = type, 
+                   colour = success_pct, 
+                   alpha = total_launches), 
+               lwd = 1) +
+  geom_text(data = vehicles, 
+            aes(max_date, type, label = label), 
+            size = 3, 
+            hjust = "inward", 
+            colour = "white", 
+            check_overlap = TRUE) +
+  facet_wrap(~state_code, scales = "free_y", ncol = 1) +
+  scale_colour_gradient2(low = "red", 
+                         high = "green", 
+                         mid = "orange", 
+                         midpoint = 0.5, 
+                         labels = scales::percent) +
+  theme_dark() +
+  theme(axis.text.y = element_blank(), 
+        axis.ticks.y = element_blank(), 
+        panel.grid.major.y  = element_blank())+
+  scale_alpha(range = c(0.2, 1)) +
+  guides(alpha = FALSE) +
+  labs(title = "How do the US and Russia compare in space?",
+       subtitle = "Comparing state run launches for the US and Soviet Union/Russia since 1960. While Russia iterates launch vehicles less,\nthey far outweight US state launches.",
+       x = "", 
+       y = "",
+       colour = "Launch \nSuccess",
+       caption = "source: http://www.planet4589.org/space/lvdb/index.html")
+
+```
+
+
+
+
+
+
