@@ -13,31 +13,26 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(tidyverse)
-library(ggimage)
+library(showtext)
 
 nuclear_explosions <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-08-20/nuclear_explosions.csv")
+
+font_add_google("Lato", regular.wt = 300, bold.wt = 700)
 ```
 
 
 ```{r}
 cold_war <- tribble(
   ~"event", ~"start", ~"end",
-  "End of World War II", 1945, 1947,
-  "Containment and the Truman Doctrine", 1947, 1953,
+  "End of \nWorld \nWar II", 1945, 1947,
+  "Containment \nand the Truman \nDoctrine", 1947, 1953,
   "Crisis and escalation", 1953, 1962,
   "From confrontation to détente", 1962, 1979,
   "Second Cold War", 1979, 1985,
   "Final years", 1985, 1991
-  )
-
-flags <- tribble(
-  ~"country", ~"url",
-  "USA", "https://commons.wikimedia.org/wiki/File:Flag_of_the_United_States.svg"
-  
-  )
-
-f <- system.file("extdata/medals.txt", package="ggimage")
-medals <- read.table(f, header=TRUE)
+  ) %>% 
+  mutate(event = fct_reorder(event, start),
+         mid = (end - start) /2 + start)
 
 ```
 
@@ -49,14 +44,38 @@ country_explosions <- nuclear_explosions %>%
   summarise(ct = n_distinct(id_no),
             max_yield = max(yield_upper, na.rm = TRUE)) %>% 
   group_by(country) %>% 
-  mutate(cs = cumsum(ct))
+  mutate(cs = cumsum(ct)) 
+  
 ```
 
 ```{r}
-  ggplot(data = country_explosions, aes(year, cs, colour = country)) +
-  geom_step() +
-  geom_point(data = country_explosions, aes(year, cs, size = max_yield), inherit.aes = FALSE) +
-  geom_rect(data = cold_war, aes(xmin = start, xmax = end, ymin = 0, ymax = 1000, fill = event, alpha = 0.2),  inherit.aes = FALSE) +
-  ggimage::geom_flag(aes(x = 1950, y = 500, image = "US"))
+ggplot(data = country_explosions, aes(year, cs, colour = country)) +
+  geom_step(show.legend = FALSE, alpha = 0.6) +
+  geom_point(aes(year, cs, size = max_yield, colour = country), alpha = 0.6, show.legend = FALSE) +
+  geom_rect(data = cold_war, aes(xmin = start, xmax = end, ymin = 0, ymax = 1000, fill = event),
+            alpha = 0.3,  inherit.aes = FALSE, show.legend = FALSE) +
+  geom_text(data = cold_war, aes(y = 950, x = mid, label = event),  inherit.aes = FALSE, size = 2.5, colour = "#DAE1F5") + 
+  annotate(geom = 'text', x = 1968, y = 720, label = "USA", colour = "#0072bb", alpha = 0.8) +
+  annotate(geom = 'text', x = 1970, y = 250, label = "USSR", colour = "#cd0000", alpha = 0.8) +
+  annotate(geom = 'text', x = 1987, y = 250, label = "France", colour = "#0072bb", alpha = 0.8) +
+  scale_fill_brewer(palette = "Greens") +
+  scale_colour_manual(values = c("USA" = "#3c3b6e", 
+                                 "CHINA" = "Red", 
+                                 "FRANCE" = "#0072bb", 
+                                 "INDIA" = "#138808", 
+                                 "PAKIST" = "#006600", 
+                                 "UK" = "#ffffff", 
+                                 "USSR" = "#cd0000" )) +
+  theme_dark() +
+  scale_size(range = c(1, 20)) +
+  labs(title = "Worldwide nuclear explosions during the Cold War",
+       subtitle = "All known nuclear explosions conducted by the United States, the Soviet Union, the United Kingdom,\nFrance & China in 1945-98 from the Stockholm International Peace Research Institute",
+       caption = "@deanmarchiori | data: Stockholm International Peace Research Institute",
+       y = "cumulative explosions",
+       x = "") +
+  theme(panel.background = element_rect(fill = "black", color = "black"), 
+        plot.background = element_rect(fill = "black", colour = "black"), 
+        text = element_text(colour = "#4CAC2C", family = 'Lato'),
+        axis.text = element_text(color = "#4CAC2C", family = 'Lato'), panel.border = element_blank())
 ```
 
