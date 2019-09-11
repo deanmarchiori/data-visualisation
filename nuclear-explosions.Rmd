@@ -1,0 +1,62 @@
+---
+title: "nuclear-explosions"
+author: "Dean Marchiori"
+date: "9/11/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggimage)
+
+nuclear_explosions <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-08-20/nuclear_explosions.csv")
+```
+
+
+```{r}
+cold_war <- tribble(
+  ~"event", ~"start", ~"end",
+  "End of World War II", 1945, 1947,
+  "Containment and the Truman Doctrine", 1947, 1953,
+  "Crisis and escalation", 1953, 1962,
+  "From confrontation to détente", 1962, 1979,
+  "Second Cold War", 1979, 1985,
+  "Final years", 1985, 1991
+  )
+
+flags <- tribble(
+  ~"country", ~"url",
+  "USA", "https://commons.wikimedia.org/wiki/File:Flag_of_the_United_States.svg"
+  
+  )
+
+f <- system.file("extdata/medals.txt", package="ggimage")
+medals <- read.table(f, header=TRUE)
+
+```
+
+
+```{r}
+country_explosions <- nuclear_explosions %>% 
+  select(id_no, year, country, yield_lower, yield_upper) %>% 
+  group_by(year, country) %>% 
+  summarise(ct = n_distinct(id_no),
+            max_yield = max(yield_upper, na.rm = TRUE)) %>% 
+  group_by(country) %>% 
+  mutate(cs = cumsum(ct))
+```
+
+```{r}
+  ggplot(data = country_explosions, aes(year, cs, colour = country)) +
+  geom_step() +
+  geom_point(data = country_explosions, aes(year, cs, size = max_yield), inherit.aes = FALSE) +
+  geom_rect(data = cold_war, aes(xmin = start, xmax = end, ymin = 0, ymax = 1000, fill = event, alpha = 0.2),  inherit.aes = FALSE) +
+  ggimage::geom_flag(aes(x = 1950, y = 500, image = "US"))
+```
+
