@@ -1,0 +1,104 @@
+---
+title: "simpsons-guest-stars"
+author: "Dean Marchiori"
+date: "9/12/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+simpsons <- readr::read_delim("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-08-27/simpsons-guests.csv", delim = "|", quote = "")
+```
+
+```{r}
+guest_heat <- simpsons %>% 
+  separate_rows(number, sep = "; ") %>% 
+  mutate(episode = str_extract(number, "\\d{2}$")) %>% 
+  count(season, episode) %>% 
+  filter(season != "Movie") %>% 
+  mutate(season = parse_number(season),
+         episode = parse_number(episode)) %>% 
+  arrange(season, episode)
+
+ep_range <- expand.grid(season = 1:30, episode = 1:25)
+
+plotdata <- ep_range %>% left_join(guest_heat, by = c("season", "episode"))
+```
+
+
+```{r}
+ggplot(plotdata, aes(episode, season, fill = n)) +
+  geom_tile(show.legend = FALSE) +
+  annotate(geom = 'text', 
+           x = 19, 
+           y = 9, 
+           label = "'Homer at the Bat' S3E17 20-02-1992 \nThe episode follows the Springfield Nuclear Power Plant softball team, 
+           led by Homer, having a winning season and making the championship game. 
+           Mr. Burns brings in nine ringers from the 'big leagues' to ensure his success. 
+           Roger Clemens, Wade Boggs, Ken Griffey, Jr., Steve Sax, Ozzie Smith, 
+           José Canseco, Don Mattingly, Darryl Strawberry and Mike Scioscia all guest starred as themselves. 
+           The guest stars were recorded over several months, with differing degrees of cooperation.", 
+           size = 3, 
+           family = 'Comic Sans MS') +
+  annotate(geom = 'text', 
+           x = 7, 
+           y = 17, 
+           label = "'Moonshine River' S24E1 30-09-2012 
+           This is the second episode in which the Simpsons go to New York City. 
+           The episode has ten guest stars, Ken Burns, Zooey Deschanel, Sarah Michelle Gellar, 
+           Anne Hathaway, Maurice LaMarche, Don Pardo, Natalie Portman, 
+           Kevin Michael Richardson, Al Roker and Sarah Silverman", 
+           size = 3, 
+           family = 'Comic Sans MS') +
+    annotate(geom = 'text', 
+             x = 19, 
+             y = 22, 
+             label = "'The Great Phatsby' S28E12-13 15-1-2017 
+             The episode is a spoof of F. Scott Fitzgerald's The Great Gatsby. 
+             It marks the first hour-long episode of the series. 
+             Guest stars include Charles Barkley, Jim Beanz, Common, V. Bozeman, 
+             Snoop Dogg, Taraji P. Henson, Keegan-Michael Key, Phil LaMarr, RZA.", 
+             size = 3, 
+             family = 'Comic Sans MS') +
+  scale_fill_gradientn(colours = c("#FED41D", "#009DDC", "#F14E28"), 
+                       values = c(0, 0.5, 1), na.value = "#FED41D") +
+  geom_curve(x = 20, xend = 17, 
+             y = -6, yend = -3,  
+             arrow = arrow(length = unit(0.1,"cm")), 
+             size = 0.2, 
+             curvature = 0.2) +
+    geom_curve(x = 4, xend = 1, 
+             y = -19, yend = -24,  
+             arrow = arrow(length = unit(0.1,"cm")), 
+             size = 0.2, 
+             curvature = -0.2) +
+      geom_curve(x = 15, xend = 12, 
+             y = -22, yend = -28,  
+             arrow = arrow(length = unit(0.1,"cm")), 
+             size = 0.2, 
+             curvature = 0.2) +
+  scale_x_continuous(breaks = 1:25, labels = 1:25) +
+  expand_limits(x = c(1, 25)) +
+  scale_y_reverse(breaks = 1:30, labels = 1:30) +
+  theme_light() +
+  labs(title = "The Simpsons guest star appearances (seasons 1–30)",
+       subtitle = "In addition to the show's regular cast of voice actors, celebrity guest stars have been a staple of The Simpsons",
+       caption = "@deanmarchiori | data: https://en.wikipedia.org/wiki/List_of_The_Simpsons_guest_stars_(seasons_1-20)") +
+   theme(plot.background = element_rect(fill = "#FED41D"),
+        panel.background = element_rect(fill = "#FED41D"),  
+        title = element_text(family = 'Simpsonfont'), 
+        text = element_text(family = 'Simpsonfont'), 
+        panel.grid = element_blank(), axis.ticks = element_blank(), panel.border = element_blank())
+
+ggsave(filename = 'simpsons.png', width = 300, device = 'png', height = 230, units = "mm")
+```
+
+
+
+
