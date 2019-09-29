@@ -2,7 +2,7 @@
 A collection of #TidyTuesday data analyses
 
 ## [Wildlife Strikes](https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-07-23)  
-![](/img/bird/-strike.png)  
+![](/img/birdstrike.png)  
 
 ## [Meteorite Impacts](https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-06-11)  
 ![](/img/meteorite.png)  
