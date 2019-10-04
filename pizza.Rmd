@@ -1,0 +1,118 @@
+---
+title: "Pizza Party"
+author: "Dean Marchiori"
+date: "10/4/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggmap)
+library(ggthemes)
+library(ggrepel)
+library(cowplot)
+extrafont::loadfonts(device = "pdf")
+
+pizza_barstool <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-10-01/pizza_barstool.csv")
+
+```
+
+```{r}
+pizza <- pizza_barstool %>%
+  filter(review_stats_all_count >= 10, city == "New York") %>%
+  select(name:longitude,
+         ave_score = review_stats_all_average_score,
+         review_count = review_stats_all_count) %>%
+  top_n(5, wt = ave_score) %>%
+  replace_na(list(longitude = -73.9983912, latitude = 40.7227471)) %>%
+  mutate(rank = rank(desc(ave_score)))
+```
+
+
+```{r}
+nym <-
+  get_stamenmap(
+    bbox =  c(-74.035, 40.702536,-73.950, 40.780),
+    zoom = 13,
+    maptype = "terrain-lines"
+  )
+
+p1 <- ggmap(nym) +
+  geom_point(
+    aes(longitude, latitude),
+    data = pizza,
+    colour = "#F9C66F",
+    fill = "#C83423",
+    stroke = 1,
+    shape = 21,
+    size = 10,
+    alpha = 0.8
+  ) +
+  geom_text(
+    data = pizza,
+    aes(longitude, latitude, label = rank),
+    size = 3,
+    colour = "white"
+  ) +
+  theme_map() +
+  theme(title = element_text(colour = "#78160A", family = 'FreeSans')) +
+  labs(title = "Where is the best pizza in New York City?",
+       subtitle = "Top 5 average ratings - according to Barstool Sports",
+       caption = "@deanmarchiori | data: https://github.com/tylerjrichards/Barstool_Pizza") 
+```
+
+```{r}
+p2 <- pizza %>%
+  mutate(name = fct_reorder(name, ave_score, .desc = TRUE)) %>%
+  ggplot(aes(name, 1, size = ave_score, label = round(ave_score, 2))) +
+  geom_point(
+    show.legend = FALSE,
+    colour = "#F9C66F",
+    fill = "#C83423",
+    stroke = 3,
+    shape = 21, 
+    alpha = 0.9
+  ) +
+  geom_text(size = 3, colour = "white") +
+  facet_wrap(name ~ address1, scales = "free", ncol = 1) +
+  scale_size(range = c(20, 30)) +
+  theme_minimal() +
+  theme(
+    axis.text = element_blank(),
+    panel.grid = element_blank(),
+    strip.text = element_text(
+      colour = "#78160A",
+      size = 8,
+      face = 'bold',
+      family = 'FreeSans'
+    ),
+    title = element_text(colour = "#78160A", family = 'FreeSans'),
+    text = element_text(colour = "#78160A", family = 'FreeSans')
+  ) +
+  labs(title = "",
+       x = "",
+       y = "") 
+```
+
+```{r}
+
+
+
+ggdraw(p1) +
+  draw_plot(
+    p2,
+    x = 0.05,
+    y = 0,
+    width = 0.25,
+    height = 0.91
+  )
+
+ggsave(width = 8, height = 9, filename = 'img/pizza.png')
+```
+
