@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "San Francisco Trees"
 author: "Dean Marchiori"
 date: "03/02/2020"
 output: html_document
@@ -11,13 +11,15 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+The data this week comes from San Francisco's open data portal.  
+
 ```{r}
 library(tidyverse)
 library(sf)
 library(mapview)
 library(osmdata)
 library(dodgr)
-
+library(showtext)
 ```
 
 Load data from https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-01-28/readme.md
@@ -37,7 +39,7 @@ tree_geo <- sf_trees %>%
 ```
 
 Start with the default guess for a bounding box for SFO. Manually tweaked
-after inspecting with mapview(). 
+after inspecting with `mapview()`. 
 
 Then get streets from osm.  
 
@@ -56,7 +58,6 @@ streets <- dodgr_streetnet(estimate_box)
 
 street_geo <- streets %>% 
   select(osm_id, name)
-
 ```
 
 Once we have trees and strees, we get the nearest street for each tree, then
@@ -69,36 +70,55 @@ trees_per_street <- tree_geo %>%
   st_drop_geometry() %>% 
   count(osm_id)
 
-streets_w_counts <- street_geo %>% 
+  streets_w_counts <- street_geo %>% 
   left_join(trees_per_street) %>% 
   replace_na(list(n = 0))
-
-saveRDS(streets_w_counts, 'streets_w_counts.rds')
 ```
 
 make plot
 
 ```{r}
-streets_w_counts <- readRDS('streets_w_counts.rds')
-
 ggplot(streets_w_counts) +
-  geom_sf(aes(alpha = n, colour = n)) +
+  geom_sf(aes(alpha = n, colour = n), show.legend = FALSE) +
+  guides(colour = "colourbar") + 
   scale_colour_viridis_c() +
-  theme_minimal()
+  theme_minimal() +
+  labs(title = "The Trees on San Francisco Streets",
+       x = "",
+       y = "",
+       caption = "@deanmarchiori | data: data.sfgov.org") +
+  scale_alpha_continuous(range = c(0.2, 0.8)) +
+  annotate(geom = 'text', 
+           x = -122.355, 
+           y = 37.78, 
+           label = "
+             Passed in November 2016, Prop. E transferred the responsibility   
+             of San Francisco’s nearly 125,000 trees from local residents back to the city.   
+             San Francisco had unburdened its tree duty onto city dwellers back in 2011,   
+             when it was facing a $380 million general fund deficit. But the decision by   
+             Big Brother to dump Big Trees on San Franciscans did not work out,   
+             to say the least.   
+             
+             The most common tree in San Francisco, with a population of 8,620,   
+             is the London plane tree (Platanus acerifolia), a hybrid sycamore.  
+             One of the world’s great street trees, it lines the Champs Élysées in Paris,   
+             it’s found in a van Gogh painting, and it has been planted in cities 
+             from Australia to Alaska.  
+           
+             - SF Weekly", 
+           size = 3, 
+           family = "Oxygen",
+           colour = "#E2E2E2") +
+  theme(
+    title = element_text(family = "Oxygen", size = 24, color = '#E2E2E2'), 
+    text = element_text(family = "Oxygen"),
+    plot.background = element_rect(fill = "#5C5B57"),
+    panel.background = element_rect(fill = "#5C5B57",  color = "#5C5B57"),
+    panel.grid = element_blank(), 
+    axis.ticks = element_blank(), 
+    panel.border = element_blank(), 
+    plot.caption = element_text(family = "Oxygen", size = 16, color = '#E2E2E2'))
+
+ggsave(filename = 'img/sf-trees.png', width = 342, device = 'png', height = 374, units = "mm")
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

@@ -1,6 +1,9 @@
 # tidytuesday
 A collection of #TidyTuesday data analyses  
 
+## [San Francisco Trees](https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-01-28)  
+![](/img/sf-trees.png)  
+
 ## [Pizza Ratings](https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-10-01)  
 ![](/img/pizza.png)  
 
