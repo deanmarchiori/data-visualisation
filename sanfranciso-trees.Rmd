@@ -1,0 +1,104 @@
+---
+title: "Untitled"
+author: "Dean Marchiori"
+date: "03/02/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(sf)
+library(mapview)
+library(osmdata)
+library(dodgr)
+
+```
+
+Load data from https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-01-28/readme.md
+
+```{r}
+sf_trees <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-28/sf_trees.csv')
+```
+
+Filter out the trees with unknown locations and turn into a basic sf object  
+
+```{r}
+tree_geo <- sf_trees %>% 
+  filter(!is.na(latitude) | !is.na(longitude)) %>% 
+  st_as_sf(coords = c('longitude', 'latitude')) %>% 
+  st_set_crs(4326) %>% 
+  select(tree_id)
+```
+
+Start with the default guess for a bounding box for SFO. Manually tweaked
+after inspecting with mapview(). 
+
+Then get streets from osm.  
+
+```{r}
+# get rough auto bounding box
+estimate_box <- osmdata::getbb("San Francisco, CA")
+
+# tweak bounding box
+estimate_box[1,1] <- -122.517
+estimate_box[1,2] <- -122.350
+estimate_box[2,1] <- 37.700
+estimate_box[2,2] <- 37.815
+
+# get streets
+streets <- dodgr_streetnet(estimate_box)
+
+street_geo <- streets %>% 
+  select(osm_id, name)
+
+```
+
+Once we have trees and strees, we get the nearest street for each tree, then
+summarise to count how many trees per street, then join back to the street
+dataset for plotting.  
+
+```{r}
+trees_per_street <- tree_geo %>% 
+  st_join(street_geo, join = st_nearest_feature) %>% 
+  st_drop_geometry() %>% 
+  count(osm_id)
+
+streets_w_counts <- street_geo %>% 
+  left_join(trees_per_street) %>% 
+  replace_na(list(n = 0))
+
+saveRDS(streets_w_counts, 'streets_w_counts.rds')
+```
+
+make plot
+
+```{r}
+streets_w_counts <- readRDS('streets_w_counts.rds')
+
+ggplot(streets_w_counts) +
+  geom_sf(aes(alpha = n, colour = n)) +
+  scale_colour_viridis_c() +
+  theme_minimal()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
