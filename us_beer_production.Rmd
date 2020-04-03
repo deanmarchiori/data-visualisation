@@ -1,0 +1,220 @@
+---
+title: "Beer Production"
+author: "Dean Marchiori"
+date: "4/3/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(forcats)
+library(brolgar)
+library(tsibble)
+library(fabletools)
+library(patchwork)
+
+options(scipen = 999)
+
+brewer_size <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-31/brewer_size.csv')
+beer_states <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-31/beer_states.csv')
+
+```
+
+```{r}
+size <- brewer_size %>% 
+  select(year, brewer_size, n_of_brewers) %>% 
+  filter(brewer_size != "Total",
+         brewer_size != "Zero Barrels",
+          brewer_size != "Under 1 Barrel") %>% 
+  mutate(brewer_size = fct_recode(brewer_size, 
+                                  `> 1,000,000 Barrels` = "1,000,001 to 6,000,000 Barrels",
+                                  `> 1,000,000 Barrels` = "1,000,001 to 1,999,999 Barrels",
+                                  `> 1,000,000 Barrels` = "1,000,000 to 6,000,000 Barrels",
+                                  `> 1,000,000 Barrels` = "6,000,001 Barrels and Over",
+                                  `> 1,000,000 Barrels` = "2,000,000 to 6,000,000 Barrels",
+                                  ),
+         brewer_size = fct_relevel(brewer_size,
+                                   "1 to 1,000 Barrels",
+                                   "1,001 to 7,500 Barrels",
+                                   "7,501 to 15,000 Barrels",
+                                   "15,001 to 30,000 Barrels",
+                                   "30,001 to 60,000 Barrels",
+                                   "60,001 to 100,000 Barrels",
+                                   "100,001 to 500,000 Barrels",
+                                   "500,001 to 1,000,000 Barrels"
+                                   )) %>% 
+  group_by(year, brewer_size) %>% 
+  summarise(n_of_brewers = sum(n_of_brewers)) %>% 
+  ungroup() %>% 
+  as_tsibble(key = brewer_size, index = year)
+
+a <- size %>% 
+  features(n_of_brewers, feat_brolgar) %>% 
+  left_join(size) %>% 
+  ggplot() +
+  geom_line(aes(year,
+                n_of_brewers, 
+                group = brewer_size,
+                alpha = sd), 
+            show.legend = FALSE,
+            colour = "#BD5B0F") +
+  geom_text(data = size %>% filter(year == last(year)), 
+                  aes(label = brewer_size, 
+                      x = year + 0.5, 
+                      y = n_of_brewers),
+            check_overlap = TRUE,
+                  size = 3,
+            colour = "#533505") +
+    scale_x_continuous(breaks = c(2009:2019)) +
+    scale_colour_viridis_c(direction = 1) +
+    theme_minimal() +
+    labs(title = "Number of brewers",
+         x = "",
+         y = "Number of Brewers")
+
+```
+
+
+```{r}
+cans <- beer_states %>% 
+  filter(!state == "total", 
+         type == "Bottles and Cans", 
+         !is.na(barrels)) %>% 
+  as_tsibble(key = c(state), index = year) 
+
+cans_feat <- cans %>% 
+  features(barrels, feat_brolgar) %>% 
+  left_join(cans)  
+  
+b <- ggplot(cans_feat) +
+  geom_line(aes(year, 
+                barrels, 
+                group = state, 
+                alpha = sd), 
+            colour = "#F17F0F",
+            show.legend = FALSE) +
+  geom_text(data = cans_feat %>% filter(year == last(year)) %>% top_n(5, sd), 
+            aes(label = state, 
+                x = year + 0.5, 
+                y = barrels),
+            show.legend = F,
+            check_overlap = TRUE,
+            size = 3,
+            colour = "#533505") +
+  theme_minimal() +
+  scale_y_continuous(labels = scales::comma) +
+  scale_x_continuous(breaks = c(2009:2019)) +
+  labs(title = "Bottles and Cans",
+       x = "", 
+       y = "Barrels Produced")
+```
+
+
+```{r}
+onprem <- beer_states %>% 
+  filter(!state == "total", 
+         type == "On Premises", 
+         !is.na(barrels)) %>% 
+  as_tsibble(key = c(state), index = year) 
+
+onprem_feat <- onprem %>% 
+  features(barrels, feat_brolgar) %>% 
+  left_join(onprem)  
+  
+c <- ggplot(onprem_feat) +
+  geom_line(aes(year, 
+                barrels,
+                group = state, 
+                alpha = sd),
+            colour = "#AE430B",
+            show.legend = FALSE) +
+  geom_text(data = onprem_feat %>% filter(year == last(year)) %>% top_n(5, sd), 
+            aes(label = state, 
+                x = year + 0.5, 
+                y = barrels),
+            show.legend = F,
+            check_overlap = TRUE,
+            size = 3,
+            colour = "#533505") +
+    scale_y_continuous(labels = scales::comma) +
+  theme_minimal() +
+  scale_x_continuous(breaks = c(2009:2019)) +
+    labs(title = "On Premises",
+       x = "", 
+       y = "")
+
+```
+
+
+```{r}
+patchwork <- a / (b + c)
+
+patchwork + plot_annotation(
+  title = 'The rise of craft beer in the US',
+  subtitle = 'Over the last 10 years there has been huge growth in small boutique brewers. 
+With bottle and can consumption decreasing, more beer is being consumed on premises, particularly in California.',
+  caption = '@deanmarchiori | Data: Alcohol and Tobacco Tax and Trade Bureau (TTB)',
+  theme = theme(plot.title = element_text(face = 'bold', size = 42))) &
+  theme(text = element_text(colour = '#533505', family =  'Noto Mono'),
+        plot.background = element_rect(fill = "#D9D1AF", colour = NA)
+        )
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
