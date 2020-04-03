@@ -1,6 +1,9 @@
 # tidytuesday
 A collection of #TidyTuesday data analyses  
 
+## [US Beer Production](https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-03-31)  
+![](/img/beer.png)   
+
 ## [San Francisco Trees](https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-01-28)  
 ![](/img/sf-trees.png)  
 
