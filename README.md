@@ -1,6 +1,9 @@
 # tidytuesday
 A collection of #TidyTuesday data analyses  
 
+## [Tour de France](https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-04-07)  
+![](/img/tour.png)  
+
 ## [US Beer Production](https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-03-31)  
 ![](/img/beer.png)   
 
