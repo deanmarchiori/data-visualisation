@@ -1,0 +1,60 @@
+---
+title: "tour de france"
+author: "Dean Marchiori"
+date: "4/9/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(janitor)
+library(ggraph)
+library(tidygraph)
+```
+
+```{r}
+stages <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-07/tdf_stages.csv')
+```
+
+
+```{r}
+stages %>% 
+  clean_names() %>% 
+  mutate(year = year(date)) %>% 
+  select(Year = year, from = origin, to = destination) %>% 
+  as_tbl_graph() %>% 
+  mutate(lab = ifelse(name %in% c("Pau",      
+                                  "Bordeaux", 
+                                  "Luchon",   
+                                  "Paris",    
+                                  "Grenoble", 
+                                  "Metz",     
+                                  "Nice",     
+                                  "Perpignan",
+                                  "Briançon", 
+                                  "Marseille"), name, NA)) %>% 
+  ggraph(layout = 'fr') + 
+  geom_edge_fan(aes(colour = Year), alpha = 0.20) +
+  geom_node_point(alpha = 0.2, size = 1, colour = "grey50") +
+  geom_node_text(aes(label = lab), repel = T, colour = "grey90") +
+  labs(title = "Tour de France Cities",
+       subtitle = "1903 - 2017",
+       caption = "visualisation by: @deanmarchiori | data: https://github.com/alastairrushworth/tdf") +
+  theme(legend.position = 'bottom', 
+        legend.text = element_text(size = 6)) +
+  scale_edge_color_gradient2(low = "blue",
+                             high = "red",
+                             mid = "white", 
+                             midpoint = 1960) +
+  set_graph_style(background = "grey10",
+                  family = "andale mono",
+                  bg_text_colour = "grey80", 
+                  text_colour = "grey90", 
+                  caption_size = 8, 
+                  title_size = 28, 
+                  subtitle_size = 18)
+```
+
