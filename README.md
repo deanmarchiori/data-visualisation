@@ -1,6 +1,9 @@
 # tidytuesday
 A collection of #TidyTuesday data analyses  
 
+## [Datasaurus 5min chart](https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-10-13)  
+![](/img/datasaurus_2.png)  
+
 ## [Tour de France](https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-04-07)  
 ![](/img/tour.png)  
 
