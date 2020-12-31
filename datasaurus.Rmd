@@ -1,0 +1,70 @@
+---
+title: "datasaurus"
+author: "Dean Marchiori"
+date: "12/31/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# 1 min
+```{r}
+library(tidyverse)
+
+datasaurus <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-10-13/datasaurus.csv') 
+
+ggplot(datasaurus, aes(x, y)) +
+  geom_point() +
+  facet_wrap(~dataset)
+```
+
+
+# 5 min
+```{r}
+library(tidyverse)
+
+datasaurus <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-10-13/datasaurus.csv') %>% 
+  filter(dataset != 'away')
+
+ggplot(datasaurus, aes(x, y, colour = dataset), alpha = 0.8) +
+  geom_point(pch = 21, size = 1, show.legend = FALSE) +
+  facet_wrap(~dataset) +
+  theme_minimal() +
+  labs(title = "Beware the Datasaurus Dozen",
+       subtitle = "Each dataset has five statistics that are (almost) the same in each case, but look very different",
+       x = "",
+       y = "")
+```
+
+# 20 min 
+```{r}
+library(tidyverse)
+library(purrr)
+library(broom)
+
+datasaurus <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-10-13/datasaurus.csv') %>% 
+  filter(dataset != "x_shape")
+
+x <- datasaurus %>% 
+  group_by(dataset) %>% 
+  nest() %>% 
+  mutate(models = map(data, ~lm(y ~ x, data = .x))) %>% 
+  mutate(clean = map(models, broom::tidy)) %>% 
+  unnest(clean) %>% 
+  select(dataset, term, estimate) %>% 
+  pivot_wider(names_from = term, values_from = estimate) 
+
+ggplot(datasaurus) + 
+  geom_point(aes(x, y, colour = dataset), show.legend = FALSE) +
+  facet_wrap(~dataset) +
+  geom_abline(data = x, aes(slope = x, intercept = `(Intercept)`), colour = "red") +
+  theme_minimal() +
+  labs(title = "Datasaurus Dozen",
+       subtitle = "Showing fitted linear regression line. While each dataset looks different, each has five statistics that are (almost) the same in each case")
+```
+
