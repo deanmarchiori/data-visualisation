@@ -28,7 +28,5 @@ A collection of #TidyTuesday data analyses
 ## [Nuclear Explosions](https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-08-20)  
 ![](/img/nuclear.png)  
 
-## [Space launches](https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-01-15)  
-![](/img/space.png)     
 
 
