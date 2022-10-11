@@ -1,5 +1,5 @@
-# tidytuesday
-A collection of #TidyTuesday data analyses  
+# Data Visualisation
+A collection of plots and data visualisations made in R 
 
 ## [Pacific DataViz Challenge](https://github.com/deanmarchiori/pacific-dataviz)  
 ![](/img/pacific.png)  
